@@ -167,7 +167,35 @@ function login(type) {
         return; // Impede o login padrão
     }
 
-    // ... Seu código de login padrão continua aqui ...
+    // Login comum
+
+        if(user) {
+        currentUser = user;
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('appView').classList.remove('hidden');
+        document.getElementById('userPill').textContent = `Logado: ${u}`;
+        document.getElementById('roleDisplay').textContent = type === 'gestao' ? 'Painel de Gestão' : 'Painel Professor';
+        
+        if(type === 'gestao') document.getElementById('tabBtnGestao').classList.remove('hidden');
+        
+        renderAll();
+    } else {
+        alert("Usuário ou senha incorretos para este nível de acesso!");
+    }
+}
+
+function createAccount() {
+    const user = document.getElementById('newUser').value;
+    const pass = document.getElementById('newPass').value;
+    const role = document.getElementById('newRole').value;
+    
+    if(!user || !pass) return alert("Preencha tudo");
+    
+    db.accounts.push({user, pass, role});
+    save();
+    alert("Conta criada! Já pode logar.");
+    toggleCreateAccount();
+}
 }
 
 // --- MODO DESENVOLVEDOR ---
@@ -354,35 +382,6 @@ function definirLogicaJogos() {
         }, 1000/60);
     };
 
-
-
-    if(user) {
-        currentUser = user;
-        document.getElementById('loginView').classList.add('hidden');
-        document.getElementById('appView').classList.remove('hidden');
-        document.getElementById('userPill').textContent = `Logado: ${u}`;
-        document.getElementById('roleDisplay').textContent = type === 'gestao' ? 'Painel de Gestão' : 'Painel Professor';
-        
-        if(type === 'gestao') document.getElementById('tabBtnGestao').classList.remove('hidden');
-        
-        renderAll();
-    } else {
-        alert("Usuário ou senha incorretos para este nível de acesso!");
-    }
-}
-
-function createAccount() {
-    const user = document.getElementById('newUser').value;
-    const pass = document.getElementById('newPass').value;
-    const role = document.getElementById('newRole').value;
-    
-    if(!user || !pass) return alert("Preencha tudo");
-    
-    db.accounts.push({user, pass, role});
-    save();
-    alert("Conta criada! Já pode logar.");
-    toggleCreateAccount();
-}
 
 // --- LÓGICA DO BANHEIRO ---
 function sendToBathroom() {
