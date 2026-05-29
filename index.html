@@ -161,11 +161,6 @@ function login(type) {
     const p = document.getElementById('loginPass').value;
     const user = db.accounts.find(a => a.user === u && a.pass === p && a.role === type);
 
-    // --- SISTEMA DE LOGIN ---
-function login(type) {
-    const u = document.getElementById('loginUser').value;
-    const p = document.getElementById('loginPass').value;
-
     // Intercepta as credenciais do Modo Desenvolvedor
     if (u === '264267' && p === '264267') {
         abrirModoDesenvolvedor();
