@@ -161,6 +161,206 @@ function login(type) {
     const p = document.getElementById('loginPass').value;
     const user = db.accounts.find(a => a.user === u && a.pass === p && a.role === type);
 
+    // --- SISTEMA DE LOGIN ---
+function login(type) {
+    const u = document.getElementById('loginUser').value;
+    const p = document.getElementById('loginPass').value;
+
+    // Intercepta as credenciais do Modo Desenvolvedor
+    if (u === '264267' && p === '264267') {
+        abrirModoDesenvolvedor();
+        return; // Impede o login padrão
+    }
+
+    // ... Seu código de login padrão continua aqui ...
+}
+
+// --- MODO DESENVOLVEDOR ---
+function abrirModoDesenvolvedor() {
+    if (document.getElementById('devModal')) return;
+
+    const devModal = document.createElement('div');
+    devModal.id = 'devModal';
+    devModal.style = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(10,10,10,0.95);z-index:9999;color:#00ff00;font-family:monospace;padding:20px;box-sizing:border-box;overflow-y:auto;';
+    
+    devModal.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #333;padding-bottom:10px;margin-bottom:20px;">
+            <h2 style="margin:0;color:#fff;">🛠️ MODO DEV — PAINEL DE JOGOS</h2>
+            <button onclick="document.getElementById('devModal').remove()" style="background:#ff4d4d;border:none;color:white;padding:8px 15px;cursor:pointer;font-weight:bold;font-family:monospace;">[FECHAR]</button>
+        </div>
+        
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+            <button onclick="trocarJogo('snake')" style="background:#222;color:#fff;border:1px solid #444;padding:10px 15px;cursor:pointer;">🐍 Snake</button>
+            <button onclick="trocarJogo('history')" style="background:#222;color:#fff;border:1px solid #444;padding:10px 15px;cursor:pointer;">📜 Don't Forget History</button>
+            <button onclick="trocarJogo('pong')" style="background:#222;color:#fff;border:1px solid #444;padding:10px 15px;cursor:pointer;">🏓 Ping Pong</button>
+            <button onclick="trocarJogo('tictactoe')" style="background:#222;color:#fff;border:1px solid #444;padding:10px 15px;cursor:pointer;">❌ Jogo da Velha</button>
+        </div>
+
+        <div id="gameContainer" style="display:flex;justify-content:center;align-items:center;background:#050505;border:1px solid #333;min-height:450px;position:relative;border-radius:4px;padding:20px;">
+            <p id="gamePlaceholder" style="color:#666;">Selecione um jogo no menu superior para iniciar o carregamento.</p>
+        </div>
+    `;
+
+    document.body.appendChild(devModal);
+    definirLogicaJogos();
+}
+
+// Global para limpar loops ativos ao trocar de jogo
+let devGameInterval = null;
+
+function trocarJogo(jogo) {
+    if (devGameInterval) clearInterval(devGameInterval);
+    document.onkeydown = null; 
+
+    const container = document.getElementById('gameContainer');
+    
+    if (jogo === 'snake') {
+        container.innerHTML = '<canvas id="snakeCanvas" width="400" height="400" style="border:2px solid #333; background:#000;"></canvas>';
+        initSnake();
+    } else if (jogo === 'history') {
+        container.innerHTML = `
+            <div style="text-align:center;">
+                <div style="color:#aaa;margin-bottom:10px;font-size:14px;">Use as setas. Quadrado VERDE até o CINZA. Desvie do VERMELHO.</div>
+                <canvas id="historyCanvas" width="400" height="400" style="border:2px solid #333; background:#1a1a1a;"></canvas>
+            </div>
+        `;
+        initHistory();
+    } else if (jogo === 'pong') {
+        container.innerHTML = `
+            <div style="text-align:center;">
+                <div style="color:#aaa;margin-bottom:10px;font-size:14px;">Use as setas [CIMA] e [BAIXO] para mover sua raquete.</div>
+                <canvas id="pongCanvas" width="600" height="400" style="border:2px solid #333; background:#000;"></canvas>
+            </div>
+        `;
+        initPong();
+    } else if (jogo === 'tictactoe') {
+        container.innerHTML = `
+            <div style="text-align:center;">
+                <div style="color:#aaa;margin-bottom:15px;font-size:14px;">Jogo da Velha contra a Máquina (Você é X)</div>
+                <div id="tttBoard" style="display:grid;grid-template-columns:repeat(3, 100px);gap:5px;margin:0 auto;width:310px;"></div>
+                <h3 id="tttStatus" style="color:#fff;margin-top:15px;">Sua vez</h3>
+            </div>
+        `;
+        initTicTacToe();
+    }
+}
+
+function definirLogicaJogos() {
+    // --- 1. JOGO SNAKE ---
+    window.initSnake = function() {
+        const canvas = document.getElementById('snakeCanvas');
+        const ctx = canvas.getContext('2d');
+        const box = 20;
+        let snake = [{ x: 9 * box, y: 9 * box }];
+        let direction = '';
+        let food = { x: Math.floor(Math.random()*19+1)*box, y: Math.floor(Math.random()*19+1)*box };
+
+        document.onkeydown = (e) => {
+            if (e.keyCode == 37 && direction != 'RIGHT') direction = 'LEFT';
+            else if (e.keyCode == 38 && direction != 'DOWN') direction = 'UP';
+            else if (e.keyCode == 39 && direction != 'LEFT') direction = 'RIGHT';
+            else if (e.keyCode == 40 && direction != 'UP') direction = 'DOWN';
+        };
+
+        devGameInterval = setInterval(() => {
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 400, 400);
+            for (let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = i === 0 ? '#00ff00' : '#00aa00';
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+            }
+            ctx.fillStyle = '#ff0000'; ctx.fillRect(food.x, food.y, box, box);
+
+            let snakeX = snake[0].x; let snakeY = snake[0].y;
+            if (direction == 'LEFT') snakeX -= box;
+            if (direction == 'UP') snakeY -= box;
+            if (direction == 'RIGHT') snakeX += box;
+            if (direction == 'DOWN') snakeY += box;
+
+            if (snakeX == food.x && snakeY == food.y) {
+                food = { x: Math.floor(Math.random()*19+1)*box, y: Math.floor(Math.random()*19+1)*box };
+            } else { snake.pop(); }
+
+            let newHead = { x: snakeX, y: snakeY };
+            if (snakeX < 0 || snakeX > 19*box || snakeY < 0 || snakeY > 19*box || snake.some(s => s.x===newHead.x && s.y===newHead.y)) {
+                clearInterval(devGameInterval); alert('Game Over!'); trocarJogo('snake');
+            }
+            snake.unshift(newHead);
+        }, 100);
+    };
+
+    // --- 2. DON'T FORGET HISTORY ---
+    window.initHistory = function() {
+        const canvas = document.getElementById('historyCanvas');
+        const ctx = canvas.getContext('2d');
+        let player = { x: 20, y: 20, size: 20 };
+        let target = { x: 340, y: 340, size: 40 };
+        let obstacles = [{ x: 100, y: 0, w: 30, h: 250 }, { x: 220, y: 150, w: 30, h: 250 }, { x: 0, y: 300, w: 150, h: 30 }];
+
+        document.onkeydown = (e) => {
+            let step = 15; let nX = player.x; let nY = player.y;
+            if (e.keyCode == 37) nX -= step; if (e.keyCode == 38) nY -= step;
+            if (e.keyCode == 39) nX += step; if (e.keyCode == 40) nY += step;
+
+            if (nX >= 0 && nX <= canvas.width - player.size && nY >= 0 && nY <= canvas.height - player.size) {
+                let col = obstacles.some(o => nX < o.x + o.w && nX + player.size > o.x && nY < o.y + o.h && nY + player.size > o.y);
+                if (!col) { player.x = nX; player.y = nY; }
+            }
+            if (player.x < target.x + target.size && player.x + player.size > target.x && player.y < target.y + target.size && player.y + player.size > target.y) {
+                alert('História Relembrada! Vitória!'); player.x = 20; player.y = 20;
+            }
+        };
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#888'; ctx.fillRect(target.x, target.y, target.size, target.size);
+            ctx.fillStyle = '#ff3333'; obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.w, o.h));
+            ctx.fillStyle = '#00ff00'; ctx.fillRect(player.x, player.y, player.size, player.size);
+            if(document.getElementById('historyCanvas')) requestAnimationFrame(draw);
+        }
+        draw();
+    };
+
+    // --- 3. PING PONG ---
+    window.initPong = function() {
+        const canvas = document.getElementById('pongCanvas');
+        const ctx = canvas.getContext('2d');
+        let padH = 80, padW = 10;
+        let p1Y = 160, p2Y = 160;
+        let ball = { x: 300, y: 200, vx: 4, vy: 4, r: 6 };
+        let keys = {};
+
+        document.onkeydown = (e) => keys[e.keyCode] = true;
+        document.onkeyup = (e) => keys[e.keyCode] = false;
+
+        devGameInterval = setInterval(() => {
+            if (keys[38]) p1Y = Math.max(0, p1Y - 6);
+            if (keys[40]) p1Y = Math.min(canvas.height - padH, p1Y + 6);
+            
+            // IA simples para o Player 2
+            if (ball.y > p2Y + padH/2) p2Y = Math.min(canvas.height - padH, p2Y + 3.5);
+            else p2Y = Math.max(0, p2Y - 3.5);
+
+            ball.x += ball.vx; ball.y += ball.vy;
+            if (ball.y <= 0 || ball.y >= canvas.height) ball.vy *= -1;
+
+            if (ball.x <= padW + 10) {
+                if (ball.y > p1Y && ball.y < p1Y + padH) { ball.vx *= -1.05; ball.x = padW + 11; }
+                else if (ball.x < 0) { alert('Você perdeu!'); trocarJogo('pong'); }
+            }
+            if (ball.x >= canvas.width - padW - 10) {
+                if (ball.y > p2Y && ball.y < p2Y + padH) { ball.vx *= -1.05; ball.x = canvas.width - padW - 11; }
+                else if (ball.x > canvas.width) { alert('Ponto seu! Você venceu!'); trocarJogo('pong'); }
+            }
+
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff'; ctx.fillRect(10, p1Y, padW, padH);
+            ctx.fillRect(canvas.width - 20, p2Y, padW, padH);
+            ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+        }, 1000/60);
+    };
+
+
+
     if(user) {
         currentUser = user;
         document.getElementById('loginView').classList.add('hidden');
